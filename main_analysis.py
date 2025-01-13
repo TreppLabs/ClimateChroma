@@ -6,6 +6,7 @@ from src.monthly_analysis import (
     compute_historical_monthly_averages,
     calculate_anomalies,
     plot_anomalies,
+    plot_trend,
 )
 
 def main():
@@ -35,6 +36,10 @@ def main():
 
     # Step 3: Plot anomalies
     plot_anomalies(data_with_anomalies)
+
+    # :
+    plot_trend(data, 'TMAX', 'TMAX Trend Over Time')
+
 
 if __name__ == "__main__":
     main()
