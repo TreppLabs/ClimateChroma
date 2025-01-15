@@ -11,8 +11,9 @@ from src.monthly_analysis import (
 from src.yearly_trend import plot_trend
 
 def main():
-    # Input and output paths
-    input_path = "data/climate_data.csv"
+    # Input paths
+    # input_path = "data/climate_data.csv"
+    input_path = "data/3901092.csv" # data from ABQ airport
     
     # Step 1: Preprocess the data
     
