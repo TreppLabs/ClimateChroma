@@ -3,3 +3,5 @@ __pycache__/
 *.ipynb_checkpoints/
 data/*.csv
 env/
+.DS_Store
+Untitled1.ipynb
