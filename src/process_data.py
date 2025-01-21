@@ -1,5 +1,5 @@
 import pandas as pd
-
+# 
 def process_climate_data(input_file):
     # Step 1: Load the data
     data = pd.read_csv(input_file)

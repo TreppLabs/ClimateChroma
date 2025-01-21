@@ -32,5 +32,3 @@ def hello_noaa():
     # print(response.json())
     
     return response.json()
-    # return "foo"
-

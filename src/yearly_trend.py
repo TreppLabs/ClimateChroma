@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
-
+# 
 def plot_trend(data, column, title):
     data['YEAR'] = data['DATE'].dt.year  # Extract year
     yearly_avg = data.groupby('YEAR')[column].mean().reset_index()
