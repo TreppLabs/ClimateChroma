@@ -101,6 +101,10 @@ def get_weather_data(station_ids, start_date, end_date, limit=1000):
 
     Returns:
         list: Weather data for all stations as a list of dictionaries.
+
+    NOTES:
+        this works, but struggles with multiple queries.  
+        instead of getting list of station ids, and querying for each, use the get_weather_by_bbox function
     """
     import os
     import requests
@@ -130,6 +134,9 @@ def get_weather_data(station_ids, start_date, end_date, limit=1000):
             weather_data.extend(response.json().get("results", []))
         else:
             print(f"Failed to fetch data for station {station_id}. HTTP Status: {response.status_code}")
+            print("headers")
+            print(response.headers)
+            print("text")
             print(response.text)
 
     return weather_data
