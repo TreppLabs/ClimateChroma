@@ -140,3 +140,6 @@ def get_weather_data(station_ids, start_date, end_date, limit=1000):
             print(response.text)
 
     return weather_data
+
+def hardcoded_temperature():
+    return {"temperature": 72}
