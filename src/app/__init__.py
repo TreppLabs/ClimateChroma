@@ -5,9 +5,9 @@ def create_app():
     app = Flask(__name__)
     # Register blueprints or routes here
     from .routes import bp as routes_bp
-    from .temperature import temperature_bp  # Import the new blueprint
+    from .weather import weather_data_bp  # Import the new blueprint
     app.register_blueprint(routes_bp)
-    app.register_blueprint(temperature_bp)  # Register the new blueprint
+    app.register_blueprint(weather_data_bp)  # Register the new blueprint
 
     return app
 
