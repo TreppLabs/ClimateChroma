@@ -14,6 +14,41 @@ const marker = L.marker([37.7749, -122.4194]).addTo(map);
 // Add a popup to the marker
 marker.bindPopup('<b>Hello!</b><br>This is San Francisco.').openPopup();
 
+// Function to make a call to the backend to fetch weather stations within the current map region
+function fetchWeatherStations(bounds) {
+  const { _southWest, _northEast } = bounds;
+  fetch(`/weather-stations?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
+    .then(response => response.json())
+    .then(data => {
+      const results = data.results || data; // Extract results if present
+      console.log('Weather Stations:', results);
+      results.forEach(station => {
+        console.log(`Station: ${station.name}, Location: (${station.latitude}, ${station.longitude})`);
+      });
+      results.forEach(station => {
+        const stationMarker = L.marker([station.latitude, station.longitude]).addTo(map);
+        stationMarker.bindPopup(`<b>Station ID:</b> ${station.id}<br><b>Name:</b> ${station.name}`);
+      });
+    }).catch(error => {
+      console.error('Error fetching weather stations:', error);
+    });
+}
+
+// Function to get the bounds of the map and fetch weather stations
+function updateWeatherStations() {
+  const bounds = map.getBounds();
+  fetchWeatherStations(bounds);
+}
+
+// Fetch weather stations when the map is loaded
+map.on('load', updateWeatherStations);
+
+// Fetch weather stations when the map is moved (zoomed or panned)
+map.on('moveend', updateWeatherStations);
+
+// Trigger the initial weather stations fetch
+updateWeatherStations();
+
 // Function to make a call to the backend to fetch historical temperature data
 function fetchTemperature(lat, lon) {
   fetch(`/temperature?lat=${lat}&lon=${lon}`)

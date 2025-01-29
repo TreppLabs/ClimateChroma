@@ -6,6 +6,31 @@ from .data_download import get_stations_by_bbox, get_weather_by_station_id
 
 temperature_bp = Blueprint('temperature', __name__)
 
+@temperature_bp.route('/weather-stations')
+def weather_stations():
+    south_west_lat = request.args.get('southWestLat')
+    south_west_lng = request.args.get('southWestLng')
+    north_east_lat = request.args.get('northEastLat')
+    north_east_lng = request.args.get('northEastLng')
+
+    if not south_west_lat or not south_west_lng or not north_east_lat or not north_east_lng:
+        return jsonify({"error": "Missing bounding box coordinates"}), 400
+
+    try:
+        stations = get_stations_by_bbox(
+            lon_min=float(south_west_lng),
+            lat_min=float(south_west_lat),
+            lon_max=float(north_east_lng),
+            lat_max=float(north_east_lat),
+            limit=10
+        )
+        if not stations:
+            return jsonify({"error": "No stations found"}), 404
+
+        return jsonify(stations)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @temperature_bp.route('/temperature')
 def temperature():
     print(f"in temperature, with args () {request.args}")
