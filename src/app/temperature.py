@@ -1,58 +1,40 @@
 from flask import Blueprint, request, jsonify
 import os
 import requests
-import logging
+from .data_download import get_stations_by_bbox, get_weather_by_station_id
+
 
 temperature_bp = Blueprint('temperature', __name__)
 
-def create_bbox(lat, lon):
-    """
-    Create a 1-degree square bounding box around the given latitude and longitude.
-    """
-    lat = float(lat)
-    lon = float(lon)
-    return f"{lat-0.5},{lon-0.5},{lat+0.5},{lon+0.5}"
-
 @temperature_bp.route('/temperature')
 def temperature():
+    print(f"in temperature, with args () {request.args}")
     lat = request.args.get('lat')
     lon = request.args.get('lon')
-    
-    print(f"Received request with lat: {lat}, lon: {lon}")
-
     if not lat or not lon:
-        logging.error("Latitude and longitude are required")
-        return jsonify({"error": "Latitude and longitude are required"}), 400
-
-    api_token = os.getenv("NOAA_API_TOKEN")
-    if not api_token:
-        logging.debug(f"Environment variables: {os.environ}")
-        logging.error("NOAA API token not found")
-        return jsonify({"error": "NOAA API token not found"}), 500
-
-    headers = {"token": api_token}
-    bbox = create_bbox(lat, lon)  # Use the bbox function
-    url = f"https://www.ncei.noaa.gov/cdo-web/api/v2/data?datasetid=GHCND&startdate=2022-01-01&enddate=2022-01-01&extent={bbox}&limit=1"
-    
-    print(f"Requesting data with URL: {url}")
+        return jsonify({"error": "Missing latitude or longitude"}), 400
 
     try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Request failed: {e}")
-        return jsonify({"error": f"Request failed: {e}"}), 500
+        # Define a bounding box with a small buffer around the point
+        buffer = 0.1  # Adjust the buffer size as needed
+        lon_min = float(lon) - buffer
+        lat_min = float(lat) - buffer
+        lon_max = float(lon) + buffer
+        lat_max = float(lat) + buffer
 
-    try:
-        data = response.json()
-    except ValueError as e:
-        logging.error(f"Error parsing JSON response: {e}")
-        return jsonify({"error": "Error parsing JSON response"}), 500
+        # Get stations by bounding box
+        stations = get_stations_by_bbox(lon_min=lon_min, lat_min=lat_min, lon_max=lon_max, lat_max=lat_max, limit=10)
+        if not stations:
+            return jsonify({"error": "No stations found"}), 404
 
-    if data.get("results"):
-        print(f"data: {data}")
-        temperature = data["results"][0].get("value")
-        return jsonify({"temperature": temperature})
-    else:
-        logging.error("No temperature data found")
-        return jsonify({"error": "No temperature data found"}), 404
+        # Use the first station to get weather data
+        station_id = stations['results'][0]['id']
+        start_date = '2022-01-01'
+        end_date = '2022-01-02'
+        weather_data = get_weather_by_station_id(station_id, start_date=start_date, end_date=end_date)
+        print(f"weather_data: {weather_data}")
+        # temperature = weather_data.get('temperature', 'N/A')
+        precipitation = weather_data[0]['value']
+        return jsonify({"precipitation": precipitation})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -82,6 +82,8 @@ def get_stations_by_bbox(lon_min, lat_min, lon_max, lat_max, limit=10):
     
     # Make the API request
     response = requests.get(url, headers=headers)
+
+    print(f"NOAA response for station request: {response.json()}")
     
     # Check for valid response
     if response.status_code == 200:
@@ -89,22 +91,18 @@ def get_stations_by_bbox(lon_min, lat_min, lon_max, lat_max, limit=10):
     else:
         raise ValueError(f"Error {response.status_code}: {response.text}")
 
-def get_weather_data(station_ids, start_date, end_date, limit=1000):
+def get_weather_by_station_id(station_id, start_date, end_date, limit=1000):
     """
-    Fetch weather data for a list of stations within a specified date range.
+    Fetch weather data for a single station within a specified date range.
 
     Args:
-        station_ids (list): List of NOAA station IDs (e.g., ["GHCND:USW00023174"]).
+        station_id (str): NOAA station ID (e.g., "GHCND:USW00023174").
         start_date (str): Start date in "YYYY-MM-DD" format.
         end_date (str): End date in "YYYY-MM-DD" format.
         limit (int): Maximum number of results per API call (default: 1000).
 
     Returns:
-        list: Weather data for all stations as a list of dictionaries.
-
-    NOTES:
-        this works, but struggles with multiple queries.  
-        instead of getting list of station ids, and querying for each, use the get_weather_by_bbox function
+        list: Weather data for the station as a list of dictionaries.
     """
     import os
     import requests
@@ -118,26 +116,39 @@ def get_weather_data(station_ids, start_date, end_date, limit=1000):
     
     weather_data = []
 
-    for station_id in station_ids:
-        # Prepare the query parameters
-        params = {
-            "datasetid": "GHCND",
-            "startdate": start_date,
-            "enddate": end_date,
-            "stationid": station_id,
-            "limit": limit,
-        }
+    # Prepare the query parameters
+    params = {
+        "datasetid": "GHCND",
+        "startdate": start_date,
+        "enddate": end_date,
+        "stationid": station_id,
+        "limit": limit,
+        "datatypeid": "PRCP",  # Only request average temperature data
+        "units": "metric"  # Ensure the units are in metric
+    }
 
-        # Make the API request
-        response = requests.get(base_url, headers=headers, params=params)
-        if response.status_code == 200:
-            weather_data.extend(response.json().get("results", []))
-        else:
-            print(f"Failed to fetch data for station {station_id}. HTTP Status: {response.status_code}")
-            print("headers")
-            print(response.headers)
-            print("text")
-            print(response.text)
+    # this worked form command line, although that station returned TMIN/TMAX
+        # curl -X GET "https://www.ncei.noaa.gov/cdo-web/api/v2/data?datasetid=GHCND&stationid=GHCND:USW00094728&startdate=2023-01-01&enddate=2023-01-31&datatypeid=TMIN&datatypeid=TMAX&limit=1000" \
+    # -H "token: YOUR_NOAA_API_TOKEN"
+    # in SF station, there was no TMIN/TMAX, only PRCP:
+        # https://www.ncei.noaa.gov/cdo-web/api/v2/data?datasetid=GHCND&stationid=GHCND:US1CAMR0016&startdate=2023-01-01&enddate=2023-01-31&datatypeid=PRCP&limit=1000"
+
+    print(f"base_url: {base_url}")
+    print(f"headers: {headers}")
+    print(f"params: {params}")
+
+    # Make the API request
+    response = requests.get(base_url, headers=headers, params=params)
+
+    print(f"\nNOAA response for weather request: {response.json()}")
+    if response.status_code == 200:
+        weather_data.extend(response.json().get("results", []))
+    else:
+        print(f"Failed to fetch data for station {station_id}. HTTP Status: {response.status_code}")
+        print("headers")
+        print(response.headers)
+        print("text")
+        print(response.text)
 
     return weather_data
 

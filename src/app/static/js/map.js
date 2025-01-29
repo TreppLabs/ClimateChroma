@@ -12,21 +12,36 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const marker = L.marker([37.7749, -122.4194]).addTo(map);
 
 // Add a popup to the marker
-marker.bindPopup('<b>Hello!</b><br>Thdis is San Francisco.').openPopup();
+marker.bindPopup('<b>Hello!</b><br>This is San Francisco.').openPopup();
 
 // Function to make a call to the backend to fetch historical temperature data
-function fetchHistoricalTemperature(lat, lon) {
-  console.log("fetchHistoricalTemperature:" + lat + " " + lon);
+function fetchTemperature(lat, lon) {
   fetch(`/temperature?lat=${lat}&lon=${lon}`)
     .then(response => response.json())
     .then(data => {
-      console.log('Historical Temperature:', data.temperature);
+      console.log('Response:', data);
+      if (typeof data.precipitation === 'number') {
+        console.log('Temperature(PRCP, LOL):', data.precipitation);
+      } else {
+        console.error('Error:', data.error);
+      }
     })
     .catch(error => {
-      console.error('Error fetching historical temperature:', error);
+      console.error('Error fetching temperature:', error);
     });
 }
 
-console.log("calling fetchHistoricalTemperature");
-// Example usage
-fetchHistoricalTemperature(41.7749, -122.4194);
+// Function to get the center coordinates of the map and fetch temperature
+function updateTemperature() {
+  const center = map.getCenter();
+  fetchTemperature(center.lat, center.lng);
+}
+
+// Fetch temperature when the map is loaded
+map.on('load', updateTemperature);
+
+// Fetch temperature when the map is moved (zoomed or panned)
+map.on('moveend', updateTemperature);
+
+// Trigger the initial temperature fetch
+updateTemperature();
