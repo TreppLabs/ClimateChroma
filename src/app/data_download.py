@@ -83,7 +83,7 @@ def get_stations_by_bbox(lon_min, lat_min, lon_max, lat_max, limit=10):
     # Make the API request
     response = requests.get(url, headers=headers)
 
-    print(f"NOAA response for station request: {response.json()}")
+    # print(f"NOAA response for station request: {response.json()}")
     
     # Check for valid response
     if response.status_code == 200:
@@ -140,7 +140,7 @@ def get_weather_by_station_id(station_id, start_date, end_date, limit=1000):
     # Make the API request
     response = requests.get(base_url, headers=headers, params=params)
 
-    print(f"\nNOAA response for weather request: {response.json()}")
+    # print(f"\nNOAA response for weather request: {response.json()}")
     if response.status_code == 200:
         weather_data.extend(response.json().get("results", []))
     else:
