@@ -77,6 +77,7 @@ document.getElementById('toggle-stations').addEventListener('click', () => {
   if (map.hasLayer(weatherStationsLayer)) {
     map.removeLayer(weatherStationsLayer);
   } else {
+    weatherStationsLayer.clearLayers(); // Clear existing markers
     map.addLayer(weatherStationsLayer);
     updateWeatherStations(); // Fetch stations again if layer is re-enabled
   }
