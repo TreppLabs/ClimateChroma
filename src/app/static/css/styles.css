@@ -1,0 +1,15 @@
+.control-section {
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.control-section button {
+  display: block;
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}

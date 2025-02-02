@@ -1,4 +1,3 @@
-// filepath: /Users/jimruppert/Projects/ClimateChroma/src/app/static/js/map.js
 // Initialize the map and set its view
 const map = L.map('map').setView([37.7749, -122.4194], 10); // San Francisco
 
@@ -14,6 +13,10 @@ const marker = L.marker([37.7749, -122.4194]).addTo(map);
 // Add a popup to the marker
 marker.bindPopup('<b>Hello!</b><br>This is San Francisco.').openPopup();
 
+// Layer groups for weather stations and generators
+const weatherStationsLayer = L.layerGroup().addTo(map);
+const generatorsLayer = L.layerGroup();
+
 // Function to make a call to the backend to fetch weather stations within the current map region
 function fetchWeatherStations(bounds) {
   const { _southWest, _northEast } = bounds;
@@ -26,9 +29,10 @@ function fetchWeatherStations(bounds) {
     })
     .then(data => {
       const results = data.results; // Extract results if present
+      weatherStationsLayer.clearLayers(); // Clear existing markers
       if (results && results.length > 0) {
         results.forEach(station => {
-          const stationMarker = L.marker([station.latitude, station.longitude]).addTo(map);
+          const stationMarker = L.marker([station.latitude, station.longitude]).addTo(weatherStationsLayer);
           stationMarker.bindPopup(`<b>Station ID:</b> ${station.id}<br><b>Name:</b> ${station.name}`);
         });
       } else {
@@ -53,5 +57,29 @@ map.on('moveend', updateWeatherStations);
 
 // Trigger the initial weather stations fetch
 updateWeatherStations();
+
+// Add control section for toggling layers
+const controlSection = L.control({ position: 'bottomright' });
+
+controlSection.onAdd = function () {
+  const div = L.DomUtil.create('div', 'control-section');
+  div.innerHTML = `
+    <button id="toggle-stations">Toggle Stations</button>
+  `;
+  console.log('Control section added to the map'); // Debugging output
+  return div;
+};
+
+controlSection.addTo(map);
+
+// Event listener for toggling weather stations
+document.getElementById('toggle-stations').addEventListener('click', () => {
+  if (map.hasLayer(weatherStationsLayer)) {
+    map.removeLayer(weatherStationsLayer);
+  } else {
+    map.addLayer(weatherStationsLayer);
+    updateWeatherStations(); // Fetch stations again if layer is re-enabled
+  }
+});
 
 
