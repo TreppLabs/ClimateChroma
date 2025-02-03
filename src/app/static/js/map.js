@@ -43,20 +43,60 @@ function fetchWeatherStations(bounds) {
     });
 }
 
-// Function to get the bounds of the map and fetch weather stations
+// Function to make a call to the backend to fetch power plants within the current map region
+function fetchPowerPlants(bounds) {
+  const { _southWest, _northEast } = bounds;
+  console.log(`Fetching power plants with bounds: southWestLat=${_southWest.lat}, southWestLng=${_southWest.lng}, northEastLat=${_northEast.lat}, northEastLng=${_northEast.lng}`); // Debugging output
+  fetch(`http://127.0.0.1:8000/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
+  // fetch(`http://127.0.0.1:8000/health`)
+  .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => { throw new Error(err.detail); });
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Power plants data:', data); // Debugging output
+      generatorsLayer.clearLayers(); // Clear existing markers
+      if (data && data.length > 0) {
+        data.forEach(plant => {
+          const plantMarker = L.marker([plant.latitude, plant.longitude]).addTo(generatorsLayer);
+          plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility.utility_name}`);
+        });
+      } else {
+        console.log('No power plants found in the current map region.');
+      }
+    }).catch(error => {
+      console.error('Error fetching power plants:', error);
+    });
+}
+
+// Function to get the bounds of the map and fetch weather stations and power plants
 function updateWeatherStations() {
   const bounds = map.getBounds();
   fetchWeatherStations(bounds);
 }
 
-// Fetch weather stations when the map is loaded
-map.on('load', updateWeatherStations);
+function updatePowerPlants() {
+  const bounds = map.getBounds();
+  fetchPowerPlants(bounds);
+}
 
-// Fetch weather stations when the map is moved (zoomed or panned)
-map.on('moveend', updateWeatherStations);
+// Fetch data when the map is loaded
+map.on('load', () => {
+  updateWeatherStations();
+  updatePowerPlants();
+});
 
-// Trigger the initial weather stations fetch
+// Fetch data when the map is moved (zoomed or panned)
+map.on('moveend', () => {
+  updateWeatherStations();
+  updatePowerPlants();
+});
+
+// Trigger the initial data fetch
 updateWeatherStations();
+updatePowerPlants();
 
 // Add control section for toggling layers
 const controlSection = L.control({ position: 'bottomright' });
@@ -65,8 +105,8 @@ controlSection.onAdd = function () {
   const div = L.DomUtil.create('div', 'control-section');
   div.innerHTML = `
     <button id="toggle-stations">Toggle Stations</button>
+    <button id="toggle-generators">Toggle Generators</button>
   `;
-  console.log('Control section added to the map'); // Debugging output
   return div;
 };
 
@@ -80,6 +120,17 @@ document.getElementById('toggle-stations').addEventListener('click', () => {
     weatherStationsLayer.clearLayers(); // Clear existing markers
     map.addLayer(weatherStationsLayer);
     updateWeatherStations(); // Fetch stations again if layer is re-enabled
+  }
+});
+
+// Event listener for toggling power plants
+document.getElementById('toggle-generators').addEventListener('click', () => {
+  if (map.hasLayer(generatorsLayer)) {
+    map.removeLayer(generatorsLayer);
+  } else {
+    generatorsLayer.clearLayers(); // Clear existing markers
+    map.addLayer(generatorsLayer);
+    updatePowerPlants(); // Fetch plants again if layer is re-enabled
   }
 });
 
