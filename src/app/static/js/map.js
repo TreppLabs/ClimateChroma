@@ -7,11 +7,24 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Add a marker to the map
-const marker = L.marker([37.7749, -122.4194]).addTo(map);
+// This allows red markers instead of the default blue ones
+var redIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-red.png',
+  iconSize: [25, 41], 
+  iconAnchor: [12, 41], 
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+var greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
-// Add a popup to the marker
-marker.bindPopup('<b>Hello!</b><br>This is San Francisco.').openPopup();
+
 
 // Layer groups for weather stations and generators
 const weatherStationsLayer = L.layerGroup().addTo(map);
@@ -60,8 +73,8 @@ function fetchPowerPlants(bounds) {
       generatorsLayer.clearLayers(); // Clear existing markers
       if (data && data.length > 0) {
         data.forEach(plant => {
-          const plantMarker = L.marker([plant.latitude, plant.longitude]).addTo(generatorsLayer);
-          plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility.utility_name}`);
+          const plantMarker = L.marker([plant.latitude, plant.longitude], {icon: greenIcon}).addTo(generatorsLayer);
+          plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}`);
         });
       } else {
         console.log('No power plants found in the current map region.');
