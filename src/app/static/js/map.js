@@ -56,33 +56,67 @@ function fetchWeatherStations(bounds) {
     });
 }
 
-// Function to make a call to the backend to fetch power plants within the current map region
+// NEW: Create a MarkerClusterGroup for power plants and add it to the map:
+const plantsCluster = L.markerClusterGroup();
+map.addLayer(plantsCluster);
+
+// Modify fetchPowerPlants to use the marker cluster group
 function fetchPowerPlants(bounds) {
   const { _southWest, _northEast } = bounds;
-  console.log(`Fetching power plants with bounds: southWestLat=${_southWest.lat}, southWestLng=${_southWest.lng}, northEastLat=${_northEast.lat}, northEastLng=${_northEast.lng}`); // Debugging output
+  console.log(`Fetching power plants with bounds: southWestLat=${_southWest.lat}, southWestLng=${_southWest.lng}, northEastLat=${_northEast.lat}, northEastLng=${_northEast.lng}`);
   fetch(`http://127.0.0.1:8000/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
-  // fetch(`http://127.0.0.1:8000/health`)
-  .then(response => {
+    .then(response => {
       if (!response.ok) {
         return response.json().then(err => { throw new Error(err.detail); });
       }
       return response.json();
     })
     .then(data => {
-      console.log('Power plants data:', data); // Debugging output
-      generatorsLayer.clearLayers(); // Clear existing markers
+      console.log('Power plants data:', data);
+      plantsCluster.clearLayers(); // Clear existing markers from the cluster
       if (data && data.length > 0) {
         data.forEach(plant => {
-          const plantMarker = L.marker([plant.latitude, plant.longitude], {icon: greenIcon}).addTo(generatorsLayer);
+          const plantMarker = L.marker([plant.latitude, plant.longitude], {icon: greenIcon});
           plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}`);
+          plantsCluster.addLayer(plantMarker); // Add marker to the cluster group
         });
       } else {
         console.log('No power plants found in the current map region.');
       }
-    }).catch(error => {
+    })
+    .catch(error => {
       console.error('Error fetching power plants:', error);
     });
 }
+
+
+// // Function to make a call to the backend to fetch power plants within the current map region
+// function fetchPowerPlants(bounds) {
+//   const { _southWest, _northEast } = bounds;
+//   console.log(`Fetching power plants with bounds: southWestLat=${_southWest.lat}, southWestLng=${_southWest.lng}, northEastLat=${_northEast.lat}, northEastLng=${_northEast.lng}`); // Debugging output
+//   fetch(`http://127.0.0.1:8000/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
+//   // fetch(`http://127.0.0.1:8000/health`)
+//   .then(response => {
+//       if (!response.ok) {
+//         return response.json().then(err => { throw new Error(err.detail); });
+//       }
+//       return response.json();
+//     })
+//     .then(data => {
+//       console.log('Power plants data:', data); // Debugging output
+//       generatorsLayer.clearLayers(); // Clear existing markers
+//       if (data && data.length > 0) {
+//         data.forEach(plant => {
+//           const plantMarker = L.marker([plant.latitude, plant.longitude], {icon: greenIcon}).addTo(generatorsLayer);
+//           plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}`);
+//         });
+//       } else {
+//         console.log('No power plants found in the current map region.');
+//       }
+//     }).catch(error => {
+//       console.error('Error fetching power plants:', error);
+//     });
+// }
 
 // Function to get the bounds of the map and fetch weather stations and power plants
 function updateWeatherStations() {
