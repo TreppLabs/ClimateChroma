@@ -1,3 +1,12 @@
+/* Global reset for html and body */
+/* trying to fix stuff getting cut off at the bottom */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
 .control-section {
   background: white;
   padding: 10px;
