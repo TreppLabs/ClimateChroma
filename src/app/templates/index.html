@@ -13,10 +13,19 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   
   <style>
+    /* Global reset for html and body */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
     /* Set the size of the map container */
     #map {
-      height: 100vh; /* Full viewport height */
-      width: 100%;   /* Full width */
+      height: calc(100vh - 6px);
+      width: calc(100% - 6px);
+      margin: 3px;
+      box-sizing: border-box;
     }
   </style>
 </head>

@@ -5,7 +5,6 @@ from sqlalchemy import text, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 
 from fastapi_app.app import schemas
-from .routers import plants
 from . import models, database
 import logging
 from typing import List
@@ -35,38 +34,13 @@ def get_db():
         db.close()
 
 @app.get("/health")
-def health_check(db: Session = Depends(plants.get_db)):
+def health_check(db: Session = Depends(get_db)):  # changed from plants.get_db
     try:
-        # Perform a simple query to check the connection
         db.execute(text("SELECT 1"))
         return {"status": "success", "message": "Database connection successful"}
     except Exception as e:
         logging.error(f"Database connection failed: {e}")
         return {"status": "error", "message": f"Database connection failed: {e}"}
-
-# OLD IMPLEMENTATION: not including generators at each plant
-# @app.get("/plants")
-# def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, northEastLng: float, db: Session = Depends(get_db)):
-#     logging.info(f"Querying plants within bounds: SW({southWestLat}, {southWestLng}), NE({northEastLat}, {northEastLng})")
-#     try:
-#         plants = db.query(
-#             models.Plant,
-#             models.Utility.utility_name
-#         ).join(
-#             models.Utility, models.Plant.utility_id == models.Utility.utility_id
-#         ).filter(
-#             models.Plant.latitude >= southWestLat,
-#             models.Plant.latitude <= northEastLat,
-#             models.Plant.longitude >= southWestLng,
-#             models.Plant.longitude <= northEastLng
-#         ).all()
-#         if not plants:
-#             logging.warning("No plants found within the specified bounds.")
-#             raise HTTPException(status_code=404, detail="No plants found")
-#         return [{"plant_name": plant.Plant.plant_name, "latitude": plant.Plant.latitude, "longitude": plant.Plant.longitude, "utility_name": plant.utility_name} for plant in plants]
-#     except Exception as e:
-#         logging.error(f"Error querying plants: {e}")
-#         raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/plants", response_model=List[schemas.PlantDetail])
 def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, northEastLng: float, db: Session = Depends(get_db)):
@@ -118,5 +92,3 @@ def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, no
     except Exception as e:
         logging.error(f"Error querying plants: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
-app.include_router(plants.router)
