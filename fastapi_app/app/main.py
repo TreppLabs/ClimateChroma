@@ -3,9 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
+
+from fastapi_app.app import schemas
 from .routers import plants
 from . import models, database
 import logging
+from typing import List
 
 logging.basicConfig(level=logging.INFO, format='[FastAPI] %(asctime)s - %(levelname)s - %(message)s')
 
@@ -41,25 +44,77 @@ def health_check(db: Session = Depends(plants.get_db)):
         logging.error(f"Database connection failed: {e}")
         return {"status": "error", "message": f"Database connection failed: {e}"}
 
-@app.get("/plants")
+# OLD IMPLEMENTATION: not including generators at each plant
+# @app.get("/plants")
+# def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, northEastLng: float, db: Session = Depends(get_db)):
+#     logging.info(f"Querying plants within bounds: SW({southWestLat}, {southWestLng}), NE({northEastLat}, {northEastLng})")
+#     try:
+#         plants = db.query(
+#             models.Plant,
+#             models.Utility.utility_name
+#         ).join(
+#             models.Utility, models.Plant.utility_id == models.Utility.utility_id
+#         ).filter(
+#             models.Plant.latitude >= southWestLat,
+#             models.Plant.latitude <= northEastLat,
+#             models.Plant.longitude >= southWestLng,
+#             models.Plant.longitude <= northEastLng
+#         ).all()
+#         if not plants:
+#             logging.warning("No plants found within the specified bounds.")
+#             raise HTTPException(status_code=404, detail="No plants found")
+#         return [{"plant_name": plant.Plant.plant_name, "latitude": plant.Plant.latitude, "longitude": plant.Plant.longitude, "utility_name": plant.utility_name} for plant in plants]
+#     except Exception as e:
+#         logging.error(f"Error querying plants: {e}")
+#         raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.get("/plants", response_model=List[schemas.PlantDetail])
 def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, northEastLng: float, db: Session = Depends(get_db)):
     logging.info(f"Querying plants within bounds: SW({southWestLat}, {southWestLng}), NE({northEastLat}, {northEastLng})")
     try:
-        plants = db.query(
+        # Join Plant, Utility, and left outer join Generator so that we can include generator data
+        q = db.query(
             models.Plant,
-            models.Utility.utility_name
+            models.Utility.utility_name,
+            models.Generator.technology,
+            models.Generator.nameplate_capacity_mw
         ).join(
             models.Utility, models.Plant.utility_id == models.Utility.utility_id
+        ).outerjoin(
+            models.Generator, models.Plant.plant_code == models.Generator.plant_code
         ).filter(
             models.Plant.latitude >= southWestLat,
             models.Plant.latitude <= northEastLat,
             models.Plant.longitude >= southWestLng,
             models.Plant.longitude <= northEastLng
-        ).all()
-        if not plants:
+        )
+        results = q.all()
+        if not results:
             logging.warning("No plants found within the specified bounds.")
             raise HTTPException(status_code=404, detail="No plants found")
-        return [{"plant_name": plant.Plant.plant_name, "latitude": plant.Plant.latitude, "longitude": plant.Plant.longitude, "utility_name": plant.utility_name} for plant in plants]
+        
+        # Aggregate by plant_code; each row is a tuple: (Plant, utility_name, technology, capacity)
+        plants_dict = {}
+        for plant, utility_name, technology, capacity in results:
+            pcode = plant.plant_code
+            if pcode not in plants_dict:
+                plants_dict[pcode] = {
+                    "plant_code": plant.plant_code,
+                    "plant_name": plant.plant_name,
+                    "latitude": plant.latitude,
+                    "longitude": plant.longitude,
+                    "utility_name": utility_name,
+                    "tech_breakdown": {},  # technology: capacity sum
+                    "total_capacity_mw": 0.0,
+                }
+            # If there is generator info in this row, aggregate it.
+            if technology is not None:
+                cap = capacity or 0.0
+                plants_dict[pcode]["tech_breakdown"][technology] = plants_dict[pcode]["tech_breakdown"].get(technology, 0.0) + cap
+                plants_dict[pcode]["total_capacity_mw"] += cap
+        
+        # Return the list of aggregated plant records.
+        return list(plants_dict.values())
     except Exception as e:
         logging.error(f"Error querying plants: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

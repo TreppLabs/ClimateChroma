@@ -72,12 +72,20 @@ function fetchPowerPlants(bounds) {
     })
     .then(data => {
       console.log('Power plants data:', data);
-      plantsCluster.clearLayers(); // Clear existing markers from the cluster
+      plantsCluster.clearLayers(); // clear existing markers
       if (data && data.length > 0) {
         data.forEach(plant => {
-          const plantMarker = L.marker([plant.latitude, plant.longitude], {icon: greenIcon});
-          plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}`);
-          plantsCluster.addLayer(plantMarker); // Add marker to the cluster group
+          // Build technology breakdown text
+          let techInfo = '';
+          for (const [tech, cap] of Object.entries(plant.tech_breakdown)) {
+            techInfo += `<br><b>${tech}</b>: ${cap.toFixed(1)} MW`;
+          }
+          // Include total capacity
+          techInfo = `<br>Total Capacity: ${plant.total_capacity_mw.toFixed(1)} MW` + techInfo;
+    
+          const plantMarker = L.marker([plant.latitude, plant.longitude], { icon: greenIcon });
+          plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}${techInfo}`);
+          plantsCluster.addLayer(plantMarker);
         });
       } else {
         console.log('No power plants found in the current map region.');
