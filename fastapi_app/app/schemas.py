@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 class UtilityBase(BaseModel):
     utility_id: int
@@ -18,6 +18,18 @@ class PlantBase(BaseModel):
 
 class Plant(PlantBase):
     utility: Utility
+    class Config:
+        orm_mode = True
+
+class PlantDetail(BaseModel):
+    plant_code: int
+    plant_name: str
+    latitude: float
+    longitude: float
+    utility_name: str
+    tech_breakdown: Dict[str, float]  # e.g., {"coal": 123.4, "solar": 45.6}
+    total_capacity_mw: float
+
     class Config:
         orm_mode = True
 
