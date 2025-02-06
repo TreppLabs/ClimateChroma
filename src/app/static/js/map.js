@@ -7,11 +7,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// This allows red markers instead of the default blue ones
+// Define marker icons
 var redIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-red.png',
-  iconSize: [25, 41], 
-  iconAnchor: [12, 41], 
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
@@ -32,9 +32,9 @@ let heatLayer = null;
 let markersVisible = true;
 let heatmapVisible = false;
 
-/* --- FUNCTIONS --- */
+// ----- DATA FETCH FUNCTIONS -----
 
-// Function to make a call to the backend to fetch weather stations within the current map region
+// Fetch weather stations (Flask API)
 function fetchWeatherStations(bounds) {
   const { _southWest, _northEast } = bounds;
   fetch(`/weather-stations?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
@@ -45,50 +45,39 @@ function fetchWeatherStations(bounds) {
       return response.json();
     })
     .then(data => {
-      const results = data.results; // Extract results if present
-      weatherStationsLayer.clearLayers(); // Clear existing markers
-      if (results && results.length > 0) {
-        results.forEach(station => {
-          const stationMarker = L.marker([station.latitude, station.longitude]).addTo(weatherStationsLayer);
-          stationMarker.bindPopup(`<b>Station ID:</b> ${station.id}<br><b>Name:</b> ${station.name}`);
-        });
-      } else {
-        console.log('No weather stations found in the current map region.');
-      }
-    }).catch(error => {
-      console.error('Error fetching weather stations:', error);
-    });
+      weatherStationsLayer.clearLayers();
+      const results = data.results || [];
+      results.forEach(station => {
+        const marker = L.marker([station.latitude, station.longitude], { icon: redIcon });
+        marker.bindPopup(`<b>Station:</b> ${station.name}`);
+        weatherStationsLayer.addLayer(marker);
+      });
+    })
+    .catch(error => console.error('Error fetching weather stations:', error));
 }
 
-// Existing: Fetch power plants to update the marker clusters
-// we specify full URL because we are using a different port for the FastAPI queries 
-// as opposed to the Flask queries
+// Fetch power plants data (FastAPI)
 const FASTAPI_BASE_URL = "http://127.0.0.1:8000";
-
-
 function fetchPowerPlants(bounds) {
   const { _southWest, _northEast } = bounds;
-  console.log(`Fetching power plants with bounds: SW(${_southWest.lat}, ${_southWest.lng}), NE(${_northEast.lat}, ${_northEast.lng})`);
+  console.log(`Fetching power plants: SW(${_southWest.lat}, ${_southWest.lng}), NE(${_northEast.lat}, ${_northEast.lng})`);
   fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
     .then(response => {
       if (!response.ok) {
-        return response.json().then(err => { throw new Error(err.detail); });
+         return response.json().then(err => { throw new Error(err.detail); });
       }
       return response.json();
     })
     .then(data => {
       console.log('Power plants data:', data);
-      plantsCluster.clearLayers(); // Clear existing markers
+      plantsCluster.clearLayers();
       if (data && data.length > 0) {
         data.forEach(plant => {
-          // Build technology breakdown text
           let techInfo = '';
           for (const [tech, cap] of Object.entries(plant.tech_breakdown)) {
             techInfo += `<br><b>${tech}</b>: ${cap.toFixed(1)} MW`;
           }
-          // Include total capacity
           techInfo = `<br>Total Capacity: ${plant.total_capacity_mw.toFixed(1)} MW` + techInfo;
-
           const plantMarker = L.marker([plant.latitude, plant.longitude], { icon: greenIcon });
           plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}${techInfo}`);
           plantsCluster.addLayer(plantMarker);
@@ -102,14 +91,14 @@ function fetchPowerPlants(bounds) {
     });
 }
 
-// New: Fetch data for the heatmap layer
+// Fetch heatmap data (also from FastAPI)
 function fetchHeatmapPlants(bounds) {
   const { _southWest, _northEast } = bounds;
-  console.log(`Fetching heatmap data with bounds: SW(${_southWest.lat}, ${_southWest.lng}), NE(${_northEast.lat}, ${_northEast.lng})`);
+  console.log(`Fetching heatmap data: SW(${_southWest.lat}, ${_southWest.lng}), NE(${_northEast.lat}, ${_northEast.lng})`);
   fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
     .then(response => {
       if (!response.ok) {
-        return response.json().then(err => { throw new Error(err.detail); });
+         return response.json().then(err => { throw new Error(err.detail); });
       }
       return response.json();
     })
@@ -118,17 +107,13 @@ function fetchHeatmapPlants(bounds) {
       if (data && data.length > 0) {
         data.forEach(plant => {
           let weight = plant.total_capacity_mw || 0;
-          // Modify weight if needed for visualization scaling
           heatData.push([plant.latitude, plant.longitude, weight]);
         });
       }
-      // Remove previous heatLayer if it exists
       if (heatLayer) {
         map.removeLayer(heatLayer);
       }
-      // Create a new heatLayer using Leaflet.heat
-      heatLayer = L.heatLayer(heatData, {radius: 25, blur: 15, maxZoom: 17});
-      // Only add the layer if the heatmap toggle is active
+      heatLayer = L.heatLayer(heatData, { radius: 25, blur: 15, maxZoom: 17 });
       if (heatmapVisible) {
         map.addLayer(heatLayer);
       }
@@ -138,82 +123,29 @@ function fetchHeatmapPlants(bounds) {
     });
 }
 
-// Toggle functions for marker clusters and heatmap
-function togglePowerPlants() {
-  if (markersVisible) {
-    map.removeLayer(plantsCluster);
-    markersVisible = false;
-  } else {
-    map.addLayer(plantsCluster);
-    markersVisible = true;
-    // Optionally update markers with current bounds:
-    fetchPowerPlants(map.getBounds());
-  }
-}
+// ----- UPDATE FUNCTIONS -----
 
-function toggleHeatmap() {
-  if (heatmapVisible) {
-    if (heatLayer) {
-      map.removeLayer(heatLayer);
-    }
-    heatmapVisible = false;
-  } else {
-    // Activate heatmap toggle and fetch data.
-    heatmapVisible = true;
-    fetchHeatmapPlants(map.getBounds());
-  }
-}
-
-// Update data on map movement if the corresponding layers are visible.
-map.on('moveend', function() {
-  const bounds = map.getBounds();
-  if (markersVisible) {
-    fetchPowerPlants(bounds);
-  }
-  if (heatmapVisible) {
-    fetchHeatmapPlants(bounds);
-  }
-});
-
-// Function to get the bounds of the map and fetch weather stations and power plants
 function updateWeatherStations() {
-  const bounds = map.getBounds();
-  fetchWeatherStations(bounds);
+  fetchWeatherStations(map.getBounds());
 }
 
 function updatePowerPlants() {
-  const bounds = map.getBounds();
-  fetchPowerPlants(bounds);
+  fetchPowerPlants(map.getBounds());
 }
 
-// Fetch data when the map is loaded
+// Fetch initial data when map loads and on moveend
 map.on('load', () => {
   updateWeatherStations();
   updatePowerPlants();
 });
-
-// Fetch data when the map is moved (zoomed or panned)
 map.on('moveend', () => {
   updateWeatherStations();
   updatePowerPlants();
 });
-
-// Trigger the initial data fetch
 updateWeatherStations();
 updatePowerPlants();
 
-// Add control section for toggling layers
-const controlSection = L.control({ position: 'topright' });
-controlSection.onAdd = function () {
-  const div = L.DomUtil.create('div', 'control-section');
-  div.innerHTML = `
-    <button id="toggle-stations">Toggle Stations</button>
-    <button id="toggle-generators">Toggle Generators</button>
-    <button id="toggle-heatmap">Toggle Capacity Heatmap</button>
-  `;
-  return div;
-};
-controlSection.addTo(map);
+// ----- TOGGLE FUNCTIONS -----
 
 function toggleStations() {
   if (map.hasLayer(weatherStationsLayer)) {
@@ -230,7 +162,6 @@ function togglePowerPlants() {
   } else {
     map.addLayer(plantsCluster);
     markersVisible = true;
-    // Optionally update markers for current bounds
     fetchPowerPlants(map.getBounds());
   }
 }
@@ -247,7 +178,47 @@ function toggleHeatmap() {
   }
 }
 
-// Event listeners for the buttons:
+// ----- CONTROL SECTION -----
+
+const controlSection = L.control({ position: 'topright' });
+controlSection.onAdd = function () {
+  const div = L.DomUtil.create('div', 'control-section');
+  div.innerHTML = `
+    <button id="toggle-stations">Toggle Stations</button>
+    <button id="toggle-generators">Toggle Generators</button>
+    <button id="toggle-heatmap">Toggle Capacity Heatmap</button>
+  `;
+  return div;
+};
+controlSection.addTo(map);
+
+// Attach event listeners for toggle buttons
 document.getElementById('toggle-stations').addEventListener('click', toggleStations);
 document.getElementById('toggle-generators').addEventListener('click', togglePowerPlants);
 document.getElementById('toggle-heatmap').addEventListener('click', toggleHeatmap);
+
+// ----- ADDITIONAL INTERACTIONS -----
+
+// Example: Record user clicks (single click)
+map.on('click', function(e) {
+  console.log('You clicked the map at:', e.latlng);
+  // Send click data to FastAPI endpoint on port 8000
+  fetch('http://127.0.0.1:8000/clicks/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      latitude: e.latlng.lat,
+      longitude: e.latlng.lng
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Failed to record click');
+    }
+    return response.json();
+  })
+  .then(data => console.log('Click recorded:', data))
+  .catch(error => console.error('Error recording click:', error));
+});

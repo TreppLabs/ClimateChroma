@@ -1,6 +1,13 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, PrimaryKeyConstraint, DateTime, func
 from sqlalchemy.orm import relationship
 from .database import Base
+
+class UserClick(Base):
+    __tablename__ = 'user_clicks'
+    click_id = Column(Integer, primary_key=True, index=True)
+    click_time = Column(DateTime(timezone=True), server_default=func.now())
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
 
 class Utility(Base):
     __tablename__ = "utilities"

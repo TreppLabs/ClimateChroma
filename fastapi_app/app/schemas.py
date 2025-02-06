@@ -1,5 +1,16 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict
+from datetime import datetime
+
+# 
+
+class UserClickCreate(BaseModel):
+    latitude: float
+    longitude: float
+    click_time: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
 
 class UtilityBase(BaseModel):
     utility_id: int
