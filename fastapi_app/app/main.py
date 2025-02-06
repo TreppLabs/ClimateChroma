@@ -5,6 +5,7 @@ from sqlalchemy import text, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 
 from fastapi_app.app import schemas
+from fastapi_app.app.routers import clicks
 from . import models, database
 import logging
 from typing import List
@@ -24,6 +25,8 @@ app.add_middleware(
 
 # Create the database tables
 models.Base.metadata.create_all(bind=database.engine)
+
+app.include_router(clicks.router)
 
 # Dependency to get a database session
 def get_db():

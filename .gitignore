@@ -1,5 +1,7 @@
 __pycache__/
+venv/
 *.pyc
+pycache/
 *.ipynb_checkpoints/
 data/*.csv
 data/
