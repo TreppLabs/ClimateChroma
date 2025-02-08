@@ -9,7 +9,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Define marker icons
 var redIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-red.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -48,7 +49,7 @@ function fetchWeatherStations(bounds) {
       weatherStationsLayer.clearLayers();
       const results = data.results || [];
       results.forEach(station => {
-        const marker = L.marker([station.latitude, station.longitude], { icon: redIcon });
+        const marker = L.marker([station.latitude, station.longitude]);
         marker.bindPopup(`<b>Station:</b> ${station.name}`);
         weatherStationsLayer.addLayer(marker);
       });
@@ -133,17 +134,25 @@ function updatePowerPlants() {
   fetchPowerPlants(map.getBounds());
 }
 
+function updateHeatmap() {
+  fetchHeatmapPlants(map.getBounds());
+}
+
+
 // Fetch initial data when map loads and on moveend
 map.on('load', () => {
   updateWeatherStations();
   updatePowerPlants();
+  updateHeatmap();
 });
 map.on('moveend', () => {
   updateWeatherStations();
   updatePowerPlants();
+  updateHeatmap();
 });
 updateWeatherStations();
 updatePowerPlants();
+updateHeatmap();
 
 // ----- TOGGLE FUNCTIONS -----
 
