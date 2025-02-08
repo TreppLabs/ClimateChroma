@@ -10,7 +10,7 @@ from . import models, database
 import logging
 from typing import List
 
-logging.basicConfig(level=logging.INFO, format='[FastAPI] %(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(level=logging.INFO, format='[FastAPI] %(asctime)s - %(levelname)s - %(message)s')
 
 app = FastAPI()
 
@@ -47,7 +47,6 @@ def health_check(db: Session = Depends(get_db)):  # changed from plants.get_db
     
 @app.get("/plants", response_model=List[schemas.PlantDetail])
 def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, northEastLng: float, db: Session = Depends(get_db)):
-    logging.info(f"Querying plants within bounds: SW({southWestLat}, {southWestLng}), NE({northEastLat}, {northEastLng})")
     try:
         # Join Plant, Utility, and left outer join Generator so that we can include generator data
         q = db.query(
