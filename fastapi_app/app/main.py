@@ -52,6 +52,7 @@ def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, no
         q = db.query(
             models.Plant,
             models.Utility.utility_name,
+            models.Generator.generator_id, 
             models.Generator.technology,
             models.Generator.nameplate_capacity_mw
         ).join(
@@ -69,9 +70,10 @@ def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, no
             logging.warning("No plants found within the specified bounds.")
             raise HTTPException(status_code=404, detail="No plants found")
         
-        # Aggregate by plant_code; each row is a tuple: (Plant, utility_name, technology, capacity)
         plants_dict = {}
-        for plant, utility_name, technology, capacity in results:
+
+        # First, accumulate capacities per plant and technology.
+        for plant, utility_name, generator_id, technology, capacity in results:
             pcode = plant.plant_code
             if pcode not in plants_dict:
                 plants_dict[pcode] = {
@@ -80,15 +82,20 @@ def get_plants(southWestLat: float, southWestLng: float, northEastLat: float, no
                     "latitude": plant.latitude,
                     "longitude": plant.longitude,
                     "utility_name": utility_name,
-                    "tech_breakdown": {},  # technology: capacity sum
+                    "tech_breakdown": {},  # will store summed capacities per technology
                     "total_capacity_mw": 0.0,
                 }
-            # If there is generator info in this row, aggregate it.
             if technology is not None:
-                cap = capacity or 0.0
-                plants_dict[pcode]["tech_breakdown"][technology] = plants_dict[pcode]["tech_breakdown"].get(technology, 0.0) + cap
-                plants_dict[pcode]["total_capacity_mw"] += cap
-        
+                # Initialize the technology sum if not present
+                if technology not in plants_dict[pcode]["tech_breakdown"]:
+                    plants_dict[pcode]["tech_breakdown"][technology] = 0.0
+                # Add the capacity for that technology
+                plants_dict[pcode]["tech_breakdown"][technology] += capacity or 0.0
+
+        # Then, compute total capacity per plant from the summed technology breakdown.
+        for pcode, plant_data in plants_dict.items():
+            plant_data["total_capacity_mw"] = sum(plant_data["tech_breakdown"].values())
+
         # Return the list of aggregated plant records.
         return list(plants_dict.values())
     except Exception as e:
