@@ -127,15 +127,12 @@ def get_weather_by_station_id(station_id, start_date, end_date, limit=1000):
         "units": "metric"  # Ensure the units are in metric
     }
 
+
     # this worked form command line, although that station returned TMIN/TMAX
         # curl -X GET "https://www.ncei.noaa.gov/cdo-web/api/v2/data?datasetid=GHCND&stationid=GHCND:USW00094728&startdate=2023-01-01&enddate=2023-01-31&datatypeid=TMIN&datatypeid=TMAX&limit=1000" \
     # -H "token: YOUR_NOAA_API_TOKEN"
     # in SF station, there was no TMIN/TMAX, only PRCP:
         # https://www.ncei.noaa.gov/cdo-web/api/v2/data?datasetid=GHCND&stationid=GHCND:US1CAMR0016&startdate=2023-01-01&enddate=2023-01-31&datatypeid=PRCP&limit=1000"
-
-    print(f"base_url: {base_url}")
-    print(f"headers: {headers}")
-    print(f"params: {params}")
 
     # Make the API request
     response = requests.get(base_url, headers=headers, params=params)

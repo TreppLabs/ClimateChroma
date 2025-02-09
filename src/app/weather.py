@@ -60,7 +60,6 @@ def fetch_weather_info():
         start_date = '2022-01-01'
         end_date = '2022-01-02'
         weather_data = get_weather_by_station_id(station_id, start_date=start_date, end_date=end_date)
-        print(f"weather_data: {weather_data}")
         precipitation = weather_data[0]['value']
         return jsonify({"precipitation": precipitation})
     except Exception as e:
