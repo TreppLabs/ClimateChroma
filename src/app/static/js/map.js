@@ -33,6 +33,9 @@ let heatLayer = null;
 let markersVisible = true;
 let heatmapVisible = false;
 
+L.control.mousePosition().addTo(map);
+// new L.Control.MousePosition().addTo(map);
+
 // ----- DATA FETCH FUNCTIONS -----
 
 // Fetch weather stations (Flask API)
@@ -61,7 +64,6 @@ function fetchWeatherStations(bounds) {
 const FASTAPI_BASE_URL = "http://127.0.0.1:8000";
 function fetchPowerPlants(bounds) {
   const { _southWest, _northEast } = bounds;
-  console.log(`Fetching power plants: SW(${_southWest.lat}, ${_southWest.lng}), NE(${_northEast.lat}, ${_northEast.lng})`);
   fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
     .then(response => {
       if (!response.ok) {
@@ -70,7 +72,6 @@ function fetchPowerPlants(bounds) {
       return response.json();
     })
     .then(data => {
-      console.log('Power plants data:', data);
       plantsCluster.clearLayers();
       if (data && data.length > 0) {
         data.forEach(plant => {
@@ -95,7 +96,6 @@ function fetchPowerPlants(bounds) {
 // Fetch heatmap data (also from FastAPI)
 function fetchHeatmapPlants(bounds) {
   const { _southWest, _northEast } = bounds;
-  console.log(`Fetching heatmap data: SW(${_southWest.lat}, ${_southWest.lng}), NE(${_northEast.lat}, ${_northEast.lng})`);
   fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
     .then(response => {
       if (!response.ok) {

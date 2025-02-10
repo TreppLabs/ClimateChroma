@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leaflet Map</title>
+  <title>ClimateChroma</title>
   
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <!-- Add MarkerCluster CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.mouseposition/1.0.2/L.Control.MousePosition.min.css" /> -->
+  <!-- <link rel="stylesheet" href="https://rawcdn.githack.com/ardhi/leaflet.mouseposition/1.0.2/L.Control.MousePosition.min.css" /> -->
+  <!-- problems with both CDN files, above, so trying local file -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/L.Control.MousePosition.css') }}" />
   
   <style>
     /* Global reset for html and body */
@@ -30,19 +31,16 @@
   </style>
 </head>
 <body>
-  <!-- Map container -->
   <div id="map"></div>
-  
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <!-- Add MarkerCluster JS -->
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-
-  <!-- Your custom JavaScript -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.mouseposition/1.0.2/L.Control.MousePosition.min.js"></script> -->
+  <!-- <script src="https://rawcdn.githack.com/ardhi/leaflet.mouseposition/1.0.2/L.Control.MousePosition.min.js"></script> -->
+  <!-- problems with both CDN files, above, so trying local file -->
+  <script src="{{ url_for('static', filename='js/L.Control.MousePosition.js') }}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
   <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 </body>
 </html>
