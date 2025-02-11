@@ -28,10 +28,77 @@
       margin: 3px;
       box-sizing: border-box;
     }
+    /* Technologies panel (hidden by default) */
+    #tech-selector-container {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.9);
+      padding: 5px;
+      border-radius: 4px;
+      box-shadow: 0 0 5px #888;
+      max-width: 250px;
+    }
+    #tech-selector-container label {
+      font-size: 13px;
+      margin-bottom: 3px;
+      display: block;
+    }
+    #tech-checkboxes {
+      max-height:150px;
+      overflow-y:auto;
+      margin-bottom: 5px;
+    }
+    /* Technologies toggle button */
+    #toggle-tech-btn {
+      position:absolute;
+      top:10px;
+      left:10px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+    
+  <!-- Button to toggle technologies panel -->
+  <button id="toggle-tech-btn">Technologies</button>
+
+  <!-- Technologies panel with checkboxes and an Apply Filter button -->
+  <div id="tech-selector-container">
+    <div id="tech-checkboxes">
+      <label><input type="checkbox" value="Municipal Solid Waste"> Municipal Solid Waste</label>
+      <label><input type="checkbox" value="Other Gases"> Other Gases</label>
+      <label><input type="checkbox" value="Conventional Steam Coal"> Conventional Steam Coal</label>
+      <label><input type="checkbox" value="Natural Gas Steam Turbine"> Natural Gas Steam Turbine</label>
+      <label><input type="checkbox" value="Solar Thermal with Energy Storage"> Solar Thermal with Energy Storage</label>
+      <label><input type="checkbox" value="Batteries"> Batteries</label>
+      <label><input type="checkbox" value="Landfill Gas"> Landfill Gas</label>
+      <label><input type="checkbox" value="Coal Integrated Gasification Combined Cycle"> Coal Integrated Gasification Combined Cycle</label>
+      <label><input type="checkbox" value="Flywheels"> Flywheels</label>
+      <label><input type="checkbox" value="Natural Gas Fired Combustion Turbine"> Natural Gas Fired Combustion Turbine</label>
+      <label><input type="checkbox" value="All Other"> All Other</label>
+      <label><input type="checkbox" value="Other Waste Biomass"> Other Waste Biomass</label>
+      <label><input type="checkbox" value="Onshore Wind Turbine"> Onshore Wind Turbine</label>
+      <label><input type="checkbox" value="Petroleum Coke"> Petroleum Coke</label>
+      <label><input type="checkbox" value="Geothermal"> Geothermal</label>
+      <label><input type="checkbox" value="Nuclear"> Nuclear</label>
+      <label><input type="checkbox" value="Conventional Hydroelectric"> Conventional Hydroelectric</label>
+      <label><input type="checkbox" value="Natural Gas Fired Combined Cycle"> Natural Gas Fired Combined Cycle</label>
+      <label><input type="checkbox" value="Hydroelectric Pumped Storage"> Hydroelectric Pumped Storage</label>
+      <label><input type="checkbox" value="Offshore Wind Turbine"> Offshore Wind Turbine</label>
+      <label><input type="checkbox" value="Petroleum Liquids"> Petroleum Liquids</label>
+      <label><input type="checkbox" value="Solar Photovoltaic"> Solar Photovoltaic</label>
+      <label><input type="checkbox" value="Natural Gas with Compressed Air Storage"> Natural Gas with Compressed Air Storage</label>
+      <label><input type="checkbox" value="Solar Thermal without Energy Storage"> Solar Thermal without Energy Storage</label>
+      <label><input type="checkbox" value="Wood/Wood Waste Biomass"> Wood/Wood Waste Biomass</label>
+      <label><input type="checkbox" value="Natural Gas Internal Combustion Engine"> Natural Gas Internal Combustion Engine</label>
+      <label><input type="checkbox" value="Other Natural Gas"> Other Natural Gas</label>
+    </div>
+    <button id="apply-tech-filter">Apply Filter</button>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
