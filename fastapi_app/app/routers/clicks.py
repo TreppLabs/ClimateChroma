@@ -13,6 +13,7 @@ def get_db():
 
 @router.post("/", response_model=schemas.UserClickCreate)
 def create_user_click(click: schemas.UserClickCreate, db: Session = Depends(get_db)):
+    print(f"in create_user_click, click={click}")
     db_click = models.UserClick(latitude=click.latitude, longitude=click.longitude)
     db.add(db_click)
     db.commit()
