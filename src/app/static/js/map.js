@@ -30,13 +30,122 @@ const weatherStationsLayer = L.layerGroup().addTo(map);
 const plantsCluster = L.markerClusterGroup();
 map.addLayer(plantsCluster);
 let heatLayer = null;
+let stationsVisible = true;
 let markersVisible = true;
 let heatmapVisible = false;
 
 L.control.mousePosition().addTo(map);
-// new L.Control.MousePosition().addTo(map);
 
-// ----- DATA FETCH FUNCTIONS -----
+// Global variable to store plants data returned from FastAPI
+var plantsData = [];
+
+// Helper to get selected technologies from the checkboxes
+function getSelectedTechs() {
+  const checkboxes = document.querySelectorAll('#tech-checkboxes input[type="checkbox"]');
+  return Array.from(checkboxes)
+              .filter(cb => cb.checked)
+              .map(cb => cb.value);
+}
+
+// Render plant markers based on the selected technology filter.
+// If no technologies are selected, show all plants with all tech info.
+// Otherwise, only show plants that contain at least one of the selected technologies,
+// and display in their popup only the capacities of those techs.
+function renderPlantMarkers() {
+  plantsCluster.clearLayers();
+  const selectedTech = getSelectedTechs();
+  console.log(`markers: Selected techs: ${selectedTech}`);
+  plantsData.forEach(plant => {
+    // Determine if the plant has any tech that matches the filter.
+    const plantTechs = Object.keys(plant.tech_breakdown);
+    if (selectedTech.length > 0 && !selectedTech.some(tech => plantTechs.includes(tech))) {
+      // Skip this plant if no match
+      return;
+    }
+    
+    let techInfo = '';
+    let filteredTech = {};
+    if (selectedTech.length > 0) {
+      for (const [tech, cap] of Object.entries(plant.tech_breakdown)) {
+        if (selectedTech.includes(tech)) {
+          filteredTech[tech] = cap;
+        }
+      }
+    } else {
+      filteredTech = plant.tech_breakdown;
+    }
+    
+    if (Object.keys(filteredTech).length > 0) {
+      techInfo = `<br>Total Capacity: ${plant.total_capacity_mw.toFixed(1)} MW`;
+      for (const [tech, cap] of Object.entries(filteredTech)) {
+        techInfo += `<br><b>${tech}</b>: ${cap.toFixed(1)} MW`;
+      }
+    }
+    
+    const marker = L.marker([plant.latitude, plant.longitude], { icon: greenIcon });
+    marker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}${techInfo}`);
+    plantsCluster.addLayer(marker);
+  });
+}
+
+// Function to render the heatmap based on filtered plants data.
+function renderHeatmap() {
+  // Remove the existing heatLayer if present.
+  if (heatLayer) {
+    map.removeLayer(heatLayer);
+  }
+  
+  const selectedTech = getSelectedTechs();
+  console.log(`heatmap: Selected techs: ${selectedTech}`);
+  let heatPoints = [];
+  plantsData.forEach(plant => {
+    const plantTechs = Object.keys(plant.tech_breakdown);
+    // If a tech filter is active and the plant does not contain any of the selected techs, skip it.
+    if (selectedTech.length > 0 && !selectedTech.some(tech => plantTechs.includes(tech))) {
+      return;
+    }
+    
+    let weight = 0;
+    if (selectedTech.length > 0) {
+      // Sum up only the capacities of the selected technologies.
+      for (const [tech, cap] of Object.entries(plant.tech_breakdown)) {
+        if (selectedTech.includes(tech)) {
+          weight += cap;
+        }
+      }
+    } else {
+      // If no filter is applied, use the plant's total capacity.
+      weight = plant.total_capacity_mw;
+    }
+    
+    // If the weight is 0, you may want to skip it.
+    if (weight > 0) {
+      heatPoints.push([plant.latitude, plant.longitude, weight]);
+    }
+  });
+  
+  // Create the heatLayer using the filtered points.
+  heatLayer = L.heatLayer(heatPoints, {
+    radius: 25,
+    blur: 15,
+    maxZoom: 17
+  }).addTo(map);
+}
+
+// Toggle the display of the technologies panel.
+document.getElementById('toggle-tech-btn').addEventListener('click', function() {
+  let container = document.getElementById('tech-selector-container');
+  container.style.display = (container.style.display === 'none' || container.style.display === '') ? 'block' : 'none';
+});
+
+// Apply the filter when the "Apply Filter" button is clicked.
+document.getElementById('apply-tech-filter').addEventListener('click', function() {
+  console.log('Applying filter button clicked...');
+  renderPlantMarkers();
+  renderHeatmap();
+  // Hide panel after applying
+  document.getElementById('tech-selector-container').style.display = 'none';
+});
 
 // Fetch weather stations (Flask API)
 function fetchWeatherStations(bounds) {
@@ -62,129 +171,90 @@ function fetchWeatherStations(bounds) {
 
 // Fetch power plants data (FastAPI)
 const FASTAPI_BASE_URL = "http://127.0.0.1:8000";
+
+// Global variable that holds the fetched plants data.
+var plantsData = [];
+
+// Fetch power plants and store the resulting data in plantsData.
 function fetchPowerPlants(bounds) {
   const { _southWest, _northEast } = bounds;
-  fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
+  return fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
     .then(response => {
       if (!response.ok) {
-         return response.json().then(err => { throw new Error(err.detail); });
+        return response.json().then(err => { throw new Error(err.detail); });
       }
       return response.json();
     })
     .then(data => {
-      plantsCluster.clearLayers();
-      if (data && data.length > 0) {
-        data.forEach(plant => {
-          let techInfo = '';
-          for (const [tech, cap] of Object.entries(plant.tech_breakdown)) {
-            techInfo += `<br><b>${tech}</b>: ${cap.toFixed(1)} MW`;
-          }
-          techInfo = `<br>Total Capacity: ${plant.total_capacity_mw.toFixed(1)} MW` + techInfo;
-          const plantMarker = L.marker([plant.latitude, plant.longitude], { icon: greenIcon });
-          plantMarker.bindPopup(`<b>Plant Name:</b> ${plant.plant_name}<br><b>Utility:</b> ${plant.utility_name}${techInfo}`);
-          plantsCluster.addLayer(plantMarker);
-        });
-      } else {
-        console.log('No power plants found in the current map region.');
-      }
+      plantsData = data;
+      return data;
     })
     .catch(error => {
       console.error('Error fetching power plants:', error);
     });
 }
 
-// Fetch heatmap data (also from FastAPI)
-function fetchHeatmapPlants(bounds) {
-  const { _southWest, _northEast } = bounds;
-  fetch(`${FASTAPI_BASE_URL}/plants?southWestLat=${_southWest.lat}&southWestLng=${_southWest.lng}&northEastLat=${_northEast.lat}&northEastLng=${_northEast.lng}`)
-    .then(response => {
-      if (!response.ok) {
-         return response.json().then(err => { throw new Error(err.detail); });
-      }
-      return response.json();
-    })
-    .then(data => {
-      let heatData = [];
-      if (data && data.length > 0) {
-        data.forEach(plant => {
-          let weight = plant.total_capacity_mw || 0;
-          heatData.push([plant.latitude, plant.longitude, weight]);
-        });
-      }
+// ----- UPDATE FUNCTIONS -----
+
+async function updateMapLayers() {
+  console.log('Updating map layers...');
+  console.log('Stations:', stationsVisible, 'Generators:', markersVisible, 'Heatmap:', heatmapVisible);   
+  if (stationsVisible) {
+    fetchWeatherStations(map.getBounds()); // Fetch weather stations also renders the layer
+  } else {
+    weatherStationsLayer.clearLayers();
+  }
+  // Update power plant layers only if markers or heatmap are visible.
+  if (markersVisible || heatmapVisible) {
+    await fetchPowerPlants(map.getBounds());
+    // Update plant markers layer.
+    if (markersVisible) {
+      renderPlantMarkers();
+    } else {
+      plantsCluster.clearLayers();
+    }
+    // Update heatLayer.
+    if (heatmapVisible) {
+      renderHeatmap();
+    } else {
       if (heatLayer) {
         map.removeLayer(heatLayer);
       }
-      heatLayer = L.heatLayer(heatData, { radius: 25, blur: 15, maxZoom: 17 });
-      if (heatmapVisible) {
-        map.addLayer(heatLayer);
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching heatmap data:', error);
-    });
+    }
+  } else {
+    // Neither markers nor heatmap are active—ensure corresponding layers are removed.
+    plantsCluster.clearLayers();
+    if (heatLayer) {
+      map.removeLayer(heatLayer);
+    }
+  }
 }
-
-// ----- UPDATE FUNCTIONS -----
-
-function updateWeatherStations() {
-  fetchWeatherStations(map.getBounds());
-}
-
-function updatePowerPlants() {
-  fetchPowerPlants(map.getBounds());
-}
-
-function updateHeatmap() {
-  fetchHeatmapPlants(map.getBounds());
-}
-
 
 // Fetch initial data when map loads and on moveend
 map.on('load', () => {
-  updateWeatherStations();
-  updatePowerPlants();
-  updateHeatmap();
+  updateMapLayers();
 });
 map.on('moveend', () => {
-  updateWeatherStations();
-  updatePowerPlants();
-  updateHeatmap();
+  updateMapLayers();
 });
-updateWeatherStations();
-updatePowerPlants();
-updateHeatmap();
+updateMapLayers();
 
 // ----- TOGGLE FUNCTIONS -----
 
 function toggleStations() {
-  if (map.hasLayer(weatherStationsLayer)) {
-    map.removeLayer(weatherStationsLayer);
-  } else {
-    map.addLayer(weatherStationsLayer);
-  }
+  console.log('Toggling stations...');
+  stationsVisible = !stationsVisible;
+  updateMapLayers();
 }
 
 function togglePowerPlants() {
-  if (markersVisible) {
-    map.removeLayer(plantsCluster);
-    markersVisible = false;
-  } else {
-    map.addLayer(plantsCluster);
-    markersVisible = true;
-    fetchPowerPlants(map.getBounds());
-  }
+  markersVisible = !markersVisible;
+  updateMapLayers();
 }
 
 function toggleHeatmap() {
-  if (heatmapVisible) {
-    if (heatLayer) {
-      map.removeLayer(heatLayer);
-    }
-    heatmapVisible = false;
-  } else {
-    heatmapVisible = true;
-    fetchHeatmapPlants(map.getBounds());
-  }
+  heatmapVisible = !heatmapVisible; 
+  updateMapLayers();
 }
 
 // ----- CONTROL SECTION -----
