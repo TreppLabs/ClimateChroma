@@ -54,7 +54,6 @@ function getSelectedTechs() {
 function renderPlantMarkers() {
   plantsCluster.clearLayers();
   const selectedTech = getSelectedTechs();
-  console.log(`markers: Selected techs: ${selectedTech}`);
   plantsData.forEach(plant => {
     // Determine if the plant has any tech that matches the filter.
     const plantTechs = Object.keys(plant.tech_breakdown);
@@ -88,6 +87,11 @@ function renderPlantMarkers() {
   });
 }
 
+// Global heatmap parameter defaults
+var heatLayerRadius = 25;
+var heatLayerBlur = 15;
+var heatLayerMaxZoom = 17;
+
 // Function to render the heatmap based on filtered plants data.
 function renderHeatmap() {
   // Remove the existing heatLayer if present.
@@ -96,7 +100,6 @@ function renderHeatmap() {
   }
   
   const selectedTech = getSelectedTechs();
-  console.log(`heatmap: Selected techs: ${selectedTech}`);
   let heatPoints = [];
   plantsData.forEach(plant => {
     const plantTechs = Object.keys(plant.tech_breakdown);
@@ -126,11 +129,77 @@ function renderHeatmap() {
   
   // Create the heatLayer using the filtered points.
   heatLayer = L.heatLayer(heatPoints, {
-    radius: 25,
-    blur: 15,
-    maxZoom: 17
+    radius: heatLayerRadius,
+    blur: heatLayerBlur,
+    maxZoom: heatLayerMaxZoom
   }).addTo(map);
 }
+
+const controlSection = L.control({ position: 'topright' });
+controlSection.onAdd = function(map) {
+  const div = L.DomUtil.create('div', 'control-section');
+  
+  // Nest the heatmap options button and container in their own wrapper.
+  div.innerHTML = `
+    <div id="toggle-buttons">
+      <button id="toggle-stations">Toggle Stations</button>
+      <button id="toggle-generators">Toggle Generators</button>
+      <button id="toggle-heatmap">Toggle Capacity Heatmap</button>
+      <div id="heatmap-options-control" style="display: none;">
+          <div id="heatmap-options-wrapper" style="float: right; margin-top: 5px;">
+            <button id="heatmap-options-btn" style="float: right;">Heatmap Options</button>
+ 
+            <div id="heatmap-options-container" style="display: none;">
+              <h4>Heatmap Options</h4>
+              <label>Radius:
+                <input type="number" id="heat-radius" value="${heatLayerRadius}" min="1" max="50">
+              </label><br>
+              <label>Blur:
+                <input type="number" id="heat-blur" value="${heatLayerBlur}" min="1" max="50">
+              </label><br>
+              <label>Max Zoom:
+                <input type="number" id="heat-maxzoom" value="${heatLayerMaxZoom}" min="1" max="20">
+              </label><br>
+              <button id="update-heatmap-params">Update Heatmap</button>
+            </div>
+          </div?
+      </div>
+    </div>
+  `;
+  
+  // Prevent clicks from propagating to the map.
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+controlSection.addTo(map);
+
+// Attach event listeners for toggle buttons
+document.getElementById('toggle-stations').addEventListener('click', toggleStations);
+document.getElementById('toggle-generators').addEventListener('click', togglePowerPlants);
+document.getElementById('toggle-heatmap').addEventListener('click', toggleHeatmap);
+
+// Toggle heatmap options panel visibility when the "Heatmap Options" button is clicked.
+document.getElementById('heatmap-options-btn').addEventListener('click', function() {
+  const container = document.getElementById('heatmap-options-container');
+  if (container.style.display === 'none' || container.style.display === '') {
+    container.style.display = 'block';
+  } else {
+    container.style.display = 'none';
+  }
+});
+
+// Update heatmap parameters and hide the options panel when "Update Heatmap" is clicked.
+document.getElementById('update-heatmap-params').addEventListener('click', function() {
+  heatLayerRadius = parseInt(document.getElementById('heat-radius').value, 10);
+  heatLayerBlur = parseInt(document.getElementById('heat-blur').value, 10);
+  heatLayerMaxZoom = parseInt(document.getElementById('heat-maxzoom').value, 10);
+
+  if (heatmapVisible) {
+    renderHeatmap();
+  }
+  // Hide the heatmap options panel.
+  document.getElementById('heatmap-options-container').style.display = 'none';
+});
 
 // Toggle the display of the technologies panel.
 document.getElementById('toggle-tech-btn').addEventListener('click', function() {
@@ -140,7 +209,6 @@ document.getElementById('toggle-tech-btn').addEventListener('click', function() 
 
 // Apply the filter when the "Apply Filter" button is clicked.
 document.getElementById('apply-tech-filter').addEventListener('click', function() {
-  console.log('Applying filter button clicked...');
   renderPlantMarkers();
   renderHeatmap();
   // Hide panel after applying
@@ -197,8 +265,6 @@ function fetchPowerPlants(bounds) {
 // ----- UPDATE FUNCTIONS -----
 
 async function updateMapLayers() {
-  console.log('Updating map layers...');
-  console.log('Stations:', stationsVisible, 'Generators:', markersVisible, 'Heatmap:', heatmapVisible);   
   if (stationsVisible) {
     fetchWeatherStations(map.getBounds()); // Fetch weather stations also renders the layer
   } else {
@@ -242,7 +308,6 @@ updateMapLayers();
 // ----- TOGGLE FUNCTIONS -----
 
 function toggleStations() {
-  console.log('Toggling stations...');
   stationsVisible = !stationsVisible;
   updateMapLayers();
 }
@@ -255,32 +320,21 @@ function togglePowerPlants() {
 function toggleHeatmap() {
   heatmapVisible = !heatmapVisible; 
   updateMapLayers();
+  
+  // Show or hide the heatmap options wrapper based on heatmapVisible.
+  const optionsControl = document.getElementById('heatmap-options-control');
+  if (heatmapVisible) {
+    optionsControl.style.display = 'block';
+  } else {
+    optionsControl.style.display = 'none';
+    // Also hide the options container if it's open.
+    document.getElementById('heatmap-options-container').style.display = 'none';
+  }
 }
 
-// ----- CONTROL SECTION -----
 
-const controlSection = L.control({ position: 'topright' });
-controlSection.onAdd = function () {
-  const div = L.DomUtil.create('div', 'control-section');
-  div.innerHTML = `
-    <button id="toggle-stations">Toggle Stations</button>
-    <button id="toggle-generators">Toggle Generators</button>
-    <button id="toggle-heatmap">Toggle Capacity Heatmap</button>
-  `;
-  return div;
-};
-controlSection.addTo(map);
-
-// Attach event listeners for toggle buttons
-document.getElementById('toggle-stations').addEventListener('click', toggleStations);
-document.getElementById('toggle-generators').addEventListener('click', togglePowerPlants);
-document.getElementById('toggle-heatmap').addEventListener('click', toggleHeatmap);
-
-// ----- ADDITIONAL INTERACTIONS -----
-
-// Example: Record user clicks (single click)
+// Record user clicks just so we can
 map.on('click', function(e) {
-  console.log('You clicked the map at:', e.latlng);
   // Send click data to FastAPI endpoint on port 8000
   fetch('http://127.0.0.1:8000/clicks/', {
     method: 'POST',
@@ -298,6 +352,6 @@ map.on('click', function(e) {
     }
     return response.json();
   })
-  .then(data => console.log('Click recorded:', data))
+  .then()
   .catch(error => console.error('Error recording click:', error));
 });
