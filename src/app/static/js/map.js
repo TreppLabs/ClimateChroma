@@ -54,7 +54,6 @@ function getSelectedTechs() {
 function renderPlantMarkers() {
   plantsCluster.clearLayers();
   const selectedTech = getSelectedTechs();
-  console.log(`markers: Selected techs: ${selectedTech}`);
   plantsData.forEach(plant => {
     // Determine if the plant has any tech that matches the filter.
     const plantTechs = Object.keys(plant.tech_breakdown);
@@ -96,7 +95,6 @@ function renderHeatmap() {
   }
   
   const selectedTech = getSelectedTechs();
-  console.log(`heatmap: Selected techs: ${selectedTech}`);
   let heatPoints = [];
   plantsData.forEach(plant => {
     const plantTechs = Object.keys(plant.tech_breakdown);
@@ -140,7 +138,6 @@ document.getElementById('toggle-tech-btn').addEventListener('click', function() 
 
 // Apply the filter when the "Apply Filter" button is clicked.
 document.getElementById('apply-tech-filter').addEventListener('click', function() {
-  console.log('Applying filter button clicked...');
   renderPlantMarkers();
   renderHeatmap();
   // Hide panel after applying
@@ -197,8 +194,6 @@ function fetchPowerPlants(bounds) {
 // ----- UPDATE FUNCTIONS -----
 
 async function updateMapLayers() {
-  console.log('Updating map layers...');
-  console.log('Stations:', stationsVisible, 'Generators:', markersVisible, 'Heatmap:', heatmapVisible);   
   if (stationsVisible) {
     fetchWeatherStations(map.getBounds()); // Fetch weather stations also renders the layer
   } else {
@@ -242,7 +237,6 @@ updateMapLayers();
 // ----- TOGGLE FUNCTIONS -----
 
 function toggleStations() {
-  console.log('Toggling stations...');
   stationsVisible = !stationsVisible;
   updateMapLayers();
 }
@@ -276,11 +270,8 @@ document.getElementById('toggle-stations').addEventListener('click', toggleStati
 document.getElementById('toggle-generators').addEventListener('click', togglePowerPlants);
 document.getElementById('toggle-heatmap').addEventListener('click', toggleHeatmap);
 
-// ----- ADDITIONAL INTERACTIONS -----
-
-// Example: Record user clicks (single click)
+// Record user clicks just so we can
 map.on('click', function(e) {
-  console.log('You clicked the map at:', e.latlng);
   // Send click data to FastAPI endpoint on port 8000
   fetch('http://127.0.0.1:8000/clicks/', {
     method: 'POST',
@@ -298,6 +289,6 @@ map.on('click', function(e) {
     }
     return response.json();
   })
-  .then(data => console.log('Click recorded:', data))
+  .then()
   .catch(error => console.error('Error recording click:', error));
 });
