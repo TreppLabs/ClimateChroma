@@ -1,1 +1,37 @@
 /*  */
+/* test to see if this file is getting included */
+body::before {
+    content: "styles.css loaded";
+    display: block;
+    color: red;
+    font-weight: bold;
+  }
+
+.tech-group {
+    margin: 10px 0;
+  }
+  
+  .tech-group > label {
+    font-weight: 900 !important; /* extra bold */
+    cursor: pointer;
+    display: block;
+    padding: 4px;
+    background-color: #f0f0f0 !important;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333 !important;
+  }
+
+  .tech-items {
+    margin-left: 20px;
+    border-left: 2px solid #ccc;
+    padding-left: 10px;
+    margin-top: 5px;
+  }
+  
+  .tech-items label {
+    display: block;
+    padding: 2px 0;
+    cursor: pointer;
+  }
+

@@ -39,12 +39,36 @@ L.control.mousePosition().addTo(map);
 // Global variable to store plants data returned from FastAPI
 var plantsData = [];
 
-// Helper to get selected technologies from the checkboxes
+// When a group checkbox is toggled, select/deselect all child tech checkboxes.
+document.querySelectorAll('.group-checkbox').forEach(groupCheckbox => {
+  groupCheckbox.addEventListener('change', function () {
+    const group = this.getAttribute('data-group');
+    const checked = this.checked;
+    document.querySelectorAll(`.tech-checkbox[data-group="${group}"]`).forEach(techCheckbox => {
+      techCheckbox.checked = checked;
+    });
+  });
+});
+
+// Optionally, if an individual tech checkbox is changed, update the corresponding group checkbox
+// if all child checkboxes are selected, mark the group as checked.
+document.querySelectorAll('.tech-checkbox').forEach(techCheckbox => {
+  techCheckbox.addEventListener('change', function () {
+    const group = this.getAttribute('data-group');
+    const groupCheckbox = document.querySelector(`.group-checkbox[data-group="${group}"]`);
+    const allChecked = Array.from(document.querySelectorAll(`.tech-checkbox[data-group="${group}"]`))
+      .every(checkbox => checkbox.checked);
+    groupCheckbox.checked = allChecked;
+  });
+});
+
+// Update getSelectedTechs() to collect the values from the tech-checkboxes.
 function getSelectedTechs() {
-  const checkboxes = document.querySelectorAll('#tech-checkboxes input[type="checkbox"]');
-  return Array.from(checkboxes)
-              .filter(cb => cb.checked)
-              .map(cb => cb.value);
+  const selected = [];
+  document.querySelectorAll('.tech-checkbox:checked').forEach(checkbox => {
+    selected.push(checkbox.value);
+  });
+  return selected;
 }
 
 // Render plant markers based on the selected technology filter.

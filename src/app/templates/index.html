@@ -12,6 +12,7 @@
   <!-- <link rel="stylesheet" href="https://rawcdn.githack.com/ardhi/leaflet.mouseposition/1.0.2/L.Control.MousePosition.min.css" /> -->
   <!-- problems with both CDN files, above, so trying local file -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/L.Control.MousePosition.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   
   <style>
     /* Global reset for html and body */
@@ -58,6 +59,37 @@
       left:10px;
       z-index: 1000;
     }
+
+      /* I tried to put these in styles.css but it didn't work for some reason */
+    
+    .tech-group {
+      margin: 10px 0;
+    }
+    
+    .tech-group > label {
+      font-weight: 700; /* standard bold */
+      cursor: pointer;
+      display: block;
+      padding: 4px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #333;
+    }
+      
+    .tech-items {
+      margin-left: 20px;
+      border-left: 2px solid #ccc;
+      padding-left: 10px;
+      margin-top: 5px;
+    }
+    
+    .tech-items label {
+      display: block;
+      padding: 2px 0;
+      cursor: pointer;
+    }
+
   </style>
 </head>
 <body>
@@ -66,37 +98,97 @@
   <!-- Button to toggle technologies panel -->
   <button id="toggle-tech-btn">Technologies</button>
 
-  <!-- Technologies panel with checkboxes and an Apply Filter button -->
   <div id="tech-selector-container">
     <div id="tech-checkboxes">
-      <label><input type="checkbox" value="Municipal Solid Waste"> Municipal Solid Waste</label>
-      <label><input type="checkbox" value="Other Gases"> Other Gases</label>
-      <label><input type="checkbox" value="Conventional Steam Coal"> Conventional Steam Coal</label>
-      <label><input type="checkbox" value="Natural Gas Steam Turbine"> Natural Gas Steam Turbine</label>
-      <label><input type="checkbox" value="Solar Thermal with Energy Storage"> Solar Thermal with Energy Storage</label>
-      <label><input type="checkbox" value="Batteries"> Batteries</label>
-      <label><input type="checkbox" value="Landfill Gas"> Landfill Gas</label>
-      <label><input type="checkbox" value="Coal Integrated Gasification Combined Cycle"> Coal Integrated Gasification Combined Cycle</label>
-      <label><input type="checkbox" value="Flywheels"> Flywheels</label>
-      <label><input type="checkbox" value="Natural Gas Fired Combustion Turbine"> Natural Gas Fired Combustion Turbine</label>
-      <label><input type="checkbox" value="All Other"> All Other</label>
-      <label><input type="checkbox" value="Other Waste Biomass"> Other Waste Biomass</label>
-      <label><input type="checkbox" value="Onshore Wind Turbine"> Onshore Wind Turbine</label>
-      <label><input type="checkbox" value="Petroleum Coke"> Petroleum Coke</label>
-      <label><input type="checkbox" value="Geothermal"> Geothermal</label>
-      <label><input type="checkbox" value="Nuclear"> Nuclear</label>
-      <label><input type="checkbox" value="Conventional Hydroelectric"> Conventional Hydroelectric</label>
-      <label><input type="checkbox" value="Natural Gas Fired Combined Cycle"> Natural Gas Fired Combined Cycle</label>
-      <label><input type="checkbox" value="Hydroelectric Pumped Storage"> Hydroelectric Pumped Storage</label>
-      <label><input type="checkbox" value="Offshore Wind Turbine"> Offshore Wind Turbine</label>
-      <label><input type="checkbox" value="Petroleum Liquids"> Petroleum Liquids</label>
-      <label><input type="checkbox" value="Solar Photovoltaic"> Solar Photovoltaic</label>
-      <label><input type="checkbox" value="Natural Gas with Compressed Air Storage"> Natural Gas with Compressed Air Storage</label>
-      <label><input type="checkbox" value="Solar Thermal without Energy Storage"> Solar Thermal without Energy Storage</label>
-      <label><input type="checkbox" value="Wood/Wood Waste Biomass"> Wood/Wood Waste Biomass</label>
-      <label><input type="checkbox" value="Natural Gas Internal Combustion Engine"> Natural Gas Internal Combustion Engine</label>
-      <label><input type="checkbox" value="Other Natural Gas"> Other Natural Gas</label>
+        
+        <!-- Renewable Energy Group -->
+        <div class="tech-group">
+          <label>
+            <input type="checkbox" class="group-checkbox" data-group="Renewable Energy">
+            Renewable Energy
+          </label>
+          <div class="tech-items">
+            <label><input type="checkbox" class="tech-checkbox" value="Onshore Wind Turbine" data-group="Renewable Energy"> Onshore Wind Turbine</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Offshore Wind Turbine" data-group="Renewable Energy"> Offshore Wind Turbine</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Solar Photovoltaic" data-group="Renewable Energy"> Solar Photovoltaic</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Solar Thermal with Energy Storage" data-group="Renewable Energy"> Solar Thermal with Energy Storage</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Solar Thermal without Energy Storage" data-group="Renewable Energy"> Solar Thermal without Energy Storage</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Conventional Hydroelectric" data-group="Renewable Energy"> Conventional Hydroelectric</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Geothermal" data-group="Renewable Energy"> Geothermal</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Wood/Wood Waste Biomass" data-group="Renewable Energy"> Wood/Wood Waste Biomass</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Other Waste Biomass" data-group="Renewable Energy"> Other Waste Biomass</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Landfill Gas" data-group="Renewable Energy"> Landfill Gas</label>
+          </div>
+        </div>
+        
+        <!-- Fossil Fuel-Based Generation Group -->
+        <div class="tech-group">
+          <label>
+            <input type="checkbox" class="group-checkbox" data-group="Fossil Fuel-Based Generation">
+            Fossil Fuel-Based Generation
+          </label>
+          <div class="tech-items">
+            <label><input type="checkbox" class="tech-checkbox" value="Conventional Steam Coal" data-group="Fossil Fuel-Based Generation"> Conventional Steam Coal</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Coal Integrated Gasification Combined Cycle" data-group="Fossil Fuel-Based Generation"> Coal Integrated Gasification Combined Cycle</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Petroleum Coke" data-group="Fossil Fuel-Based Generation"> Petroleum Coke</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Petroleum Liquids" data-group="Fossil Fuel-Based Generation"> Petroleum Liquids</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Natural Gas Fired Combustion Turbine" data-group="Fossil Fuel-Based Generation"> Natural Gas Fired Combustion Turbine</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Natural Gas Fired Combined Cycle" data-group="Fossil Fuel-Based Generation"> Natural Gas Fired Combined Cycle</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Natural Gas Internal Combustion Engine" data-group="Fossil Fuel-Based Generation"> Natural Gas Internal Combustion Engine</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Natural Gas with Compressed Air Storage" data-group="Fossil Fuel-Based Generation"> Natural Gas with Compressed Air Storage</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Other Natural Gas" data-group="Fossil Fuel-Based Generation"> Other Natural Gas</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Natural Gas Steam Turbine" data-group="Fossil Fuel-Based Generation"> Natural Gas Steam Turbine</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Other Gases" data-group="Fossil Fuel-Based Generation"> Other Gases</label>
+          </div>
+        </div>
+        
+        <!-- Nuclear Energy Group -->
+        <div class="tech-group">
+          <label>
+            <input type="checkbox" class="group-checkbox" data-group="Nuclear Energy">
+            Nuclear Energy
+          </label>
+          <div class="tech-items">
+            <label><input type="checkbox" class="tech-checkbox" value="Nuclear" data-group="Nuclear Energy"> Nuclear</label>
+          </div>
+        </div>
+        
+        <!-- Energy Storage Group -->
+        <div class="tech-group">
+          <label>
+            <input type="checkbox" class="group-checkbox" data-group="Energy Storage">
+            Energy Storage
+          </label>
+          <div class="tech-items">
+            <label><input type="checkbox" class="tech-checkbox" value="Batteries" data-group="Energy Storage"> Batteries</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Flywheels" data-group="Energy Storage"> Flywheels</label>
+            <label><input type="checkbox" class="tech-checkbox" value="Hydroelectric Pumped Storage" data-group="Energy Storage"> Hydroelectric Pumped Storage</label>
+          </div>
+        </div>
+        
+        <!-- Waste-to-Energy Group -->
+        <div class="tech-group">
+          <label>
+            <input type="checkbox" class="group-checkbox" data-group="Waste-to-Energy">
+            Waste-to-Energy
+          </label>
+          <div class="tech-items">
+            <label><input type="checkbox" class="tech-checkbox" value="Municipal Solid Waste" data-group="Waste-to-Energy"> Municipal Solid Waste</label>
+          </div>
+        </div>
+        
+        <!-- Miscellaneous / Other Group -->
+        <div class="tech-group">
+          <label>
+            <input type="checkbox" class="group-checkbox" data-group="Miscellaneous / Other">
+            Miscellaneous / Other
+          </label>
+          <div class="tech-items">
+            <label><input type="checkbox" class="tech-checkbox" value="All Other" data-group="Miscellaneous / Other"> All Other</label>
+          </div>
+        </div>
     </div>
+    
     <button id="apply-tech-filter">Apply Filter</button>
   </div>
 
